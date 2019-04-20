@@ -15,8 +15,32 @@
 #define potentiometerInput A0
 #define tmpInput A1
 
+float VCC_IN=0.0;
+
+#define V_DIVIDER 1023
+
 // 1 Forward, 0 Backwards
 const int motorRotation = FORWARD;
+
+float readVcc() {
+  long result; // Read 1.1V reference against AVcc
+
+  //http://maxembedded.com/2011/06/the-adc-of-the-avr/
+  ADMUX = bit(REFS0) | bit(MUX3) | bit(MUX2) | bit(MUX1);
+  delay(2); // Wait for Vref to settle
+
+  // https://www.arduino.cc/en/Reference/PortManipulation
+  // http://www.robotplatform.com/knowledge/ADC/adc_tutorial_2.html
+  ADCSRA |= bit(ADSC);
+  while (bit_is_set(ADCSRA, ADSC));
+  result = ADCL; 
+  result |= ADCH << 8;
+  Serial.print(result); Serial.println(" 1.1 VREF"); 
+  // 1.1vref * 1023steps * 1000mv = 1125300L
+    result = (1.1 * V_DIVIDER * 1000) / result; // Back-calculate AVcc in mV
+  return result / 1000.0;
+}
+
 
 void setup()
 { 
@@ -40,7 +64,7 @@ void setup()
   analogWrite(motorAReverse, LOW);
   analogWrite(motorBForward, LOW);
   analogWrite(motorBForward, LOW);
-
+  VCC_IN=readVcc();
 }
 
 void moveForward(int valueA, int valueB)
@@ -68,8 +92,11 @@ void setDirection(int direction, int valueA, int valueB)
   }
 }
 
+
 void loop()
 {
+   Serial.println("");
+   VCC_IN=readVcc();
   int pot = map(analogRead(potentiometerInput), 0, 1024, 1, 255);
   int dir = digitalRead(directionInput);
 
@@ -85,14 +112,15 @@ void loop()
 
   int reading = analogRead(tmpInput); 
   // converting that reading to voltage, for 5v arduino
-  float voltage = reading * 5.0;
-  voltage /= 1024.0; 
+  float voltage = reading * VCC_IN;
+  voltage /= V_DIVIDER; 
   // print out the voltage
+  Serial.print(reading); Serial.println(" READING");
+  Serial.print(VCC_IN); Serial.println(" VCC");
   Serial.print(voltage); Serial.println(" volts");
 
   // now print out the temperature
   float temperatureC = (voltage - 0.5) * 100 ;  //converting from 10 mv per degree wit 500 mV offset
   //to degrees ((voltage - 500mV) times 100)
   Serial.print(temperatureC); Serial.println(" degrees C");
-
 }

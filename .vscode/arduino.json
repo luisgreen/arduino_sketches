@@ -1,0 +1,7 @@
+{
+    "programmer": "AVR ISP",
+    "port": "COM4",
+    "board": "arduino:avr:uno",
+    "sketch": "2_STEPPER_JOYSTICK\\2_STEPPER_JOYSTICK.ino",
+    "output": "C:/tmp/arduino/"
+}
